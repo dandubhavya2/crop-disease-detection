@@ -25,8 +25,8 @@ def detect():
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    lower_brown = np.array([10,100,20])
-    upper_brown = np.array([20,255,200])
+    lower_brown = np.array([5,50,50])
+    upper_brown = np.array([30,255,255])
 
     mask = cv2.inRange(hsv, lower_brown, upper_brown)
 
@@ -41,10 +41,10 @@ def detect():
 
     percent = (disease_pixels/total_pixels)*100
 
-    if percent < 5:
+    if percent < 2:
         result = "Healthy Leaf"
         disease = "No Disease"
-    elif percent < 15:
+    elif percent < 10:
         result = "Diseased Leaf"
         disease = "Leaf Spot"
     else:
