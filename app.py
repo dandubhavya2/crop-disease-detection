@@ -1,4 +1,5 @@
-from flask import Flask,render_template,request
+
+from flask import Flask, render_template, request
 import cv2
 import numpy as np
 import os
@@ -8,11 +9,9 @@ app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-
 @app.route('/')
 def home():
     return render_template("index.html")
-
 
 @app.route('/detect', methods=['POST'])
 def detect():
@@ -22,23 +21,45 @@ def detect():
     file.save(path)
 
     img = cv2.imread(path)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray,(5,5),0)
+    img = cv2.resize(img,(300,300))
 
-    _, thresh = cv2.threshold(blur,120,255,cv2.THRESH_BINARY_INV)
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    disease_pixels = np.sum(thresh==255)
-    total_pixels = thresh.size
+    lower_brown = np.array([10,100,20])
+    upper_brown = np.array([20,255,200])
+
+    mask = cv2.inRange(hsv, lower_brown, upper_brown)
+
+    highlight = img.copy()
+    highlight[mask == 255] = [0,0,255]
+
+    result_image = os.path.join("static","result.png")
+    cv2.imwrite(result_image, highlight)
+
+    disease_pixels = np.sum(mask==255)
+    total_pixels = mask.size
 
     percent = (disease_pixels/total_pixels)*100
 
-    if percent > 5:
-        result = "Leaf is Diseased"
+    if percent < 5:
+        result = "Healthy Leaf"
+        disease = "No Disease"
+    elif percent < 15:
+        result = "Diseased Leaf"
+        disease = "Leaf Spot"
     else:
-        result = "Leaf is Healthy"
+        result = "Severely Diseased Leaf"
+        disease = "Blight Infection"
 
-    return render_template("result.html", result=result)
+    return render_template(
+        "result.html",
+        result=result,
+        disease=disease,
+        percent=round(percent,2),
+        image="result.png"
+    )
 
-
-if __name__== '__main__':
-    app.run(debug=True)
+import os
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
