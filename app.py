@@ -28,34 +28,46 @@ def detect():
     img = cv2.resize(img,(400,400))
 
     hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    #mask for diseased dark/brown regions
-    lower_brown = np.array([25,40,40])
-    upper_brown= np.array([90,255,255])
 
-    leaf_mask = cv2.inRange(hsv,lower_brown,upper_brown)
-   #remove noise
-    kernel = np.ones((5,5),np.uint8)
-    disease_mask = cv2.morphologyEx(leaf_mask,cv2.MORPH_OPEN,kernel)
-    disease_mask = cv2.morphologyEx(disease_mask, cv2.MORPH_OPEN, kernel)
+    #healthy green color range
+    lower_green=np.array([25,40,40])
+    upper_green=np.array([90,255,255])
 
-    #count pixels
-    leaf_pixels = cv2.countNonZero(leaf_mask)
-    disease_pixels = cv2.countNonZero(disease_mask)
+    # for diseased dark/brown regions
+    lower_brown = np.array([102,602,202])
+    upper_brown=np.array([902,255,200])
+    # masks
+    green_mask=cv2.inRange(hsv,lower_green,upper_green)
+    brown_mask=cv2.inRange(hsv,lower_brown,upper_brown)
+    kernel=np.ones((5,5),np.uint8)
 
-    # calculate percentage
-    percent = (disease_pixels / (leaf_pixels+disease_pixels)) * 100
+    green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_OPEN, kernel)
+    brown_mask = cv2.morphologyEx(brown_mask, cv2.MORPH_OPEN, kernel)
+
+    leaf_pixels = cv2.countNonZero(green_mask)
+    disease_pixels = cv2.countNonZero(brown_mask)
+
+    total_pixels = leaf_pixels + disease_pixels
+
+    if total_pixels == 0:
+        percent = 0
+    else:
+        percent = (disease_pixels / total_pixels) * 100
+
     percent = round(percent,2)
 
-    if percent > 3:
-       result = "Diseased Leaf"
+    if percent > 15:
+        result = "Diseased Leaf"
     else:
-       result = "Healthy Leaf"
+        result = "Healthy Leaf"
+
     return render_template(
         "result.html",
         result=result,
         percent=percent,
         image=path
     )
+    
 if __name__ == "__main__":
     port = int(os.environ.get("PORT",5000))
-    app.run(host="0.0.0.0",port=port)
+    app.run(host="0.0.0.0",port=port,debug=True)
