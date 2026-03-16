@@ -23,35 +23,38 @@ def detect():
     file.save(path)
 
     img = cv2.imread(path)
-    img = cv2.resize(img,(300,300))
+    if img is None:
+        return "Image not loaded.Please upload a valid image"
+    img = cv2.resize(img,(400,400))
 
-    # convert to HSV color space
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    #mask for diseased dark/brown regions
+    lower_brown = np.array([25,40,40])
+    upper_brown= np.array([90,255,255])
 
-    # detect yellow areas
-    lower_yellow = np.array([20,100,100])
-    upper_yellow = np.array([35,255,255])
+    leaf_mask = cv2.inRange(hsv,lower_brown,upper_brown)
+   #remove noise
+    kernel = np.ones((5,5),np.uint8)
+    disease_mask = cv2.morphologyEx(leaf_mask,cv2.MORPH_OPEN,kernel)
+    disease_mask = cv2.morphologyEx(disease_mask, cv2.MORPH_OPEN, kernel)
 
-    yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+    #count pixels
+    leaf_pixels = cv2.countNonZero(leaf_mask)
+    disease_pixels = cv2.countNonZero(disease_mask)
 
-    # detect dark spots
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, dark_mask = cv2.threshold(gray,80,255,cv2.THRESH_BINARY_INV)
+    # calculate percentage
+    percent = (disease_pixels / (leaf_pixels+disease_pixels)) * 100
+    percent = round(percent,2)
 
-    # count pixels
-    yellow_pixels = np.sum(yellow_mask==255)
-    dark_pixels = np.sum(dark_mask==255)
-
-    # decision rule
-    if yellow_pixels > 1200 or dark_pixels > 1500:
-        result = "Diseased Leaf"
+    if percent > 3:
+       result = "Diseased Leaf"
     else:
-        result = "Healthy Leaf"
-
-    return render_template("result.html", result=result)
-
-
-import os
+       result = "Healthy Leaf"
+    return render_template(
+        "result.html",
+        result=result,
+        percent=percent,
+        image=path
+    )
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT",5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)

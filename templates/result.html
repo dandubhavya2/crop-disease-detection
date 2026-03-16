@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Detection Result</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<title>Result</title>
+<link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
@@ -15,15 +15,11 @@
 
 <h2>{{ result }}</h2>
 
-<p>Disease Type: <b>{{ disease }}</b></p>
+<h3>Disease Percentage :{{ percent }}%</h3>
 
-<p>Disease Percentage: <b>{{ percent }}%</b></p>
-
-<img src="{{ url_for('static', filename=image) }}" class="result-image">
-
-<a href="/" class="button">Upload Another Image</a>
-
-</div>
+<img src="{{ image }} " width="300">
+<br><br>
+<a href="/">Upload another image</a>
 
 </div>
 
