@@ -49,14 +49,14 @@ def detect():
 
     total_pixels = leaf_pixels + disease_pixels
 
-    if total_pixels == 0:
+    if total_pixels ==0:
         percent = 0
     else:
         percent = (disease_pixels / total_pixels) * 100
 
     percent = round(percent,2)
 
-    if percent > 15:
+    if percent >50:
         result = "Diseased Leaf"
     else:
         result = "Healthy Leaf"
